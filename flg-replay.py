@@ -13,6 +13,8 @@ def start():
 
 def next():
 	global move, sgf_nodes
+	if move+1 >= len(sgf_nodes):
+		return ""
 	move = move + 1
 	return ';'+sgf_nodes[move]
 
@@ -21,14 +23,46 @@ def prev():
 	if move == 0:
 		return ""
 	data = flsgf[move-1]
+	print data+" => "
 	if data.find("AB") != -1:
 		data = data.replace("AE","AW")
 		data = data.replace("AB","AE")
 	elif data.find("AW") != -1:
 		data = data.replace("AE","AB")
 		data = data.replace("AW","AE")
+	#data = data.replace("CR","ME")
+	#if data.count("ME") > 1:
+		#data = data.replace("ME","CR",1)
+	#print data
 	move = move - 1
-	return data
+	return ';'+data
+
+def process_data(data):
+	global move, flsgf
+	nodes = data.split(';');
+	nodes.pop(0);
+	#print nodes
+	for data in nodes:
+		#print data+"->"+str(move)+'-'+str(len(flsgf))
+		if data.find("KEY[g]") != -1:
+			s.send(start())
+		elif data.find("KEY[j]") != -1:
+			s.send(next())
+		elif data.find("KEY[k]") != -1:
+			s.send(prev())
+		elif data.find("KEY[w]") != -1:
+			for i in range(5):
+				s.send(next())
+		elif data.find("KEY[b]") != -1:
+			for i in range(5):
+				s.send(prev())
+		elif data.find("KEY[") != -1:
+			pass
+		elif data.find("MOU[") != -1:
+			pass
+		elif move > len(flsgf):
+			flsgf.append(data)
+	
 
 # read sgf and split into separate command
 sgf = sys.stdin.read()
@@ -54,21 +88,9 @@ while True:
 			data = s.recv(1024)
 			if data == "":
 				sys.exit(0)
-			print "IN"+data,
-			print "->"+str(move)+'-'+str(len(flsgf))
-			if data.find(";KEY[g]") != -1:
-				s.send(start())
-			elif data.find(";KEY[j]") != -1:
-				s.send(next())
-			elif data.find(";KEY[k]") != -1:
-				s.send(prev())
-			elif data.find(";KEY[") != -1:
-				pass
-			elif data.find(";MOU[") != -1:
-				pass
-			elif move == len(flsgf)+1:
-				flsgf.append(data)
-	
+
+			process_data(data)
+
 s.close()
 
 sys.exit(0)
