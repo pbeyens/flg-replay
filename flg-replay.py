@@ -4,6 +4,7 @@ import sys
 import socket
 import string
 import select
+import re
 
 def start():
 	global move, sgf_nodes, flsgf
@@ -20,20 +21,26 @@ def next():
 
 def prev():
 	global move, flsgf
-	if move == 0:
+	if move <= 1:
+		start()
 		return ""
 	data = flsgf[move-1]
-	print data+" => "
+	print data+" => ",
 	if data.find("AB") != -1:
 		data = data.replace("AE","AW")
 		data = data.replace("AB","AE")
 	elif data.find("AW") != -1:
 		data = data.replace("AE","AB")
 		data = data.replace("AW","AE")
-	#data = data.replace("CR","ME")
-	#if data.count("ME") > 1:
-		#data = data.replace("ME","CR",1)
-	#print data
+	cr = re.compile('CR\[..\]')
+	all = cr.findall(data)
+	if len(all):
+		data = data.replace(all[0],"")
+	if move-2 >= 0:
+		all = cr.findall(flsgf[move-2])
+		if len(all):
+			data = data + all[0]
+	print data
 	move = move - 1
 	return ';'+data
 
@@ -85,6 +92,7 @@ while True:
 
 	for s in inputready:
 		if s == flgoban:
+			print str(move) + " " + str(len(flsgf))
 			data = s.recv(1024)
 			if data == "":
 				sys.exit(0)
